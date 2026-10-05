@@ -1,16 +1,15 @@
-# React + Vite
+# Projeto React - POS 2026
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Nesse projeto vocês deverão criar clientes web com React (JS) para a API de Agendamentos da disciplina.
 
-Currently, two official plugins are available:
+## Instruções
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+- Criem um fork desse repositório (um por grupo). No momento da criação do fork mudem o nome do repositório para o nome do cliente de vocês. Lembrem-se de mudar também o nome no `package.json`.
+- Na pasta `docs/` estão as especificações para cada projeto, siga o destinado ao seu grupo.
+- No GSA foi enviada a lista dos grupos com usuários admin e senhas. Recomendo que mudem as senhas assim que tiverem acesso.
+- Todos os participantes devem ter commits no repositóro.
+- Substituam esse `README.md` com informações do seu projeto.
+- Usem o projeto da [Escola de Música](https://pos-escola-de-musica-web.vercel.app/) como referência [GitHub](https://github.com/dvcirilo-ifrn/pos-escola-de-musica-web)
+- O projeto deve ser hospedado no [Vercel](https://vercel.com/).
+- Na data da entrega o projeto deverá ser demonstrado diretamente do Vercel e serão feitas perguntas referentes à implementação.
+- *Data de entrega*: 16/10/2026
