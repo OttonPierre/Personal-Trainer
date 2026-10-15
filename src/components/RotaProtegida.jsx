@@ -2,7 +2,11 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function RotaProtegida({ children, admin = false }) {
-  const { user, isAdmin } = useAuth();
+  const { isAdmin, loading } = useAuth();
+
+  if (loading) {
+    return <div>Carregando...</div>;
+  }
 
   if (!localStorage.getItem('access')) {
     return <Navigate to="/login" replace />;

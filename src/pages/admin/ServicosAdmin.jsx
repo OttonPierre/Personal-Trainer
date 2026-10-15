@@ -18,31 +18,60 @@ export default function ServicosAdmin() {
     try {
       const params = filtro ? `?ativo=${filtro}` : '';
       const res = await getServicos(params);
-      if (!res.ok) { setErro('Erro ao carregar.'); return; }
+      if (!res.ok) { 
+        setErro('Erro ao carregar os serviços.'); 
+        return; 
+      }
       const data = await res.json();
       setServicos(data.results || data);
+    } catch (err) {
+      setErro('Erro de conexão ao carregar serviços.');
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { carregar(); }, [filtro]);
+  useEffect(() => { 
+    carregar(); 
+  }, [filtro]);
 
   return (
     <div>
       <h1>Serviços</h1>
-      <div>
+      <div style={{ marginBottom: 16 }}>
         <select value={filtro} onChange={(e) => setFiltro(e.target.value)}>
           <option value="">Todos</option>
           <option value="true">Ativos</option>
           <option value="false">Inativos</option>
         </select>
-        <button type="button" onClick={() => navigate('/admin/servicos/novo')}>Novo serviço</button>
+
+        {/* Botão sempre visível no topo */}
+        <button 
+          type="button" 
+          onClick={() => navigate('/admin/servicos/novo')}
+          style={{ marginLeft: 8, cursor: 'pointer' }}
+        >
+          + Novo serviço
+        </button>
       </div>
+
       {loading && <Loading />}
+      
       {erro && <ErrorMsg message={erro} onRetry={carregar} />}
-      {!loading && !erro && servicos.length === 0 && <p>Cadastre o primeiro serviço.</p>}
-      {servicos.map((s) => (
+
+      {!loading && !erro && servicos.length === 0 && (
+        <div style={{ textAlign: 'center', padding: 20 }}>
+          <p>Nenhum serviço cadastrado.</p>
+          <button 
+            type="button" 
+            onClick={() => navigate('/admin/servicos/novo')}
+          >
+            Cadastrar o primeiro serviço
+          </button>
+        </div>
+      )}
+
+      {!loading && !erro && servicos.map((s) => (
         <div
           key={s.id}
           onClick={() => navigate(`/admin/servicos/${s.id}`)}
