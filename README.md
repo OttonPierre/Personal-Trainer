@@ -1,15 +1,33 @@
-# Projeto React - POS 2026
+# Personal Trainer 
 
-Nesse projeto vocês deverão criar clientes web com React (JS) para a API de Agendamentos da disciplina.
+Esse sistema web é voltado para personal trainers, sendo uma plataforma desenvolvida com React, Vite e API REST, que permite aos alunos agendar treinos individuais e avaliações físicas, consultar horários disponíveis, acompanhar seus agendamentos e avaliar os serviços. O administrador pode gerenciar os personal trainers, os serviços oferecidos, os horários de atendimento e a agenda do estúdio, além de confirmar, concluir ou cancelar agendamentos. Dessa forma, o sistema busca facilitar a organização dos atendimentos, melhorar a experiência dos alunos e tornar a gestão do estúdio mais eficiente.
 
-## Instruções
+## Tecnologias
 
-- Criem um fork desse repositório (um por grupo). No momento da criação do fork mudem o nome do repositório para o nome do cliente de vocês. Lembrem-se de mudar também o nome no `package.json`.
-- Na pasta `docs/` estão as especificações para cada projeto, siga o destinado ao seu grupo.
-- No GSA foi enviada a lista dos grupos com usuários admin e senhas. Recomendo que mudem as senhas assim que tiverem acesso.
-- Todos os participantes devem ter commits no repositóro.
-- Substituam esse `README.md` com informações do seu projeto.
-- Usem o projeto da [Escola de Música](https://pos-escola-de-musica-web.vercel.app/) como referência [GitHub](https://github.com/dvcirilo-ifrn/pos-escola-de-musica-web)
-- O projeto deve ser hospedado no [Vercel](https://vercel.com/).
-- Na data da entrega o projeto deverá ser demonstrado diretamente do Vercel e serão feitas perguntas referentes à implementação.
-- *Data de entrega*: 16/10/2026
+- React 
+- Vite
+- JavaScript
+- API Rest 
+
+## Funcionalidades
+
+- Cadastro, login e recuperação de senha.
+- Edição do perfil do usuário.
+- Agendamento de treinos e avaliações físicas.
+- Consulta de horários disponíveis.
+- Visualização e cancelamento de agendamentos.
+- Avaliação dos treinos realizados.
+- Consulta aos perfis dos personal trainers.
+- Gerenciamento de personal trainers.
+- Gerenciamento de horários de atendimento.
+- Controle da agenda e confirmação de agendamentos.
+- Acompanhamento das avaliações dos alunos.
+
+## Integrantes do Grupo 
+
+- [Otton Pierre Gomes](https://github.com/OttonPierre)
+- [Gustavo Lunnyê Sales Silva](https://github.com/Gusta567u)
+- [João Emanuel de Souza Gomes](https://github.com/jedsg777)
+
+
+
