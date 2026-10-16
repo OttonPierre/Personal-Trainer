@@ -1,57 +1,44 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { redefinirSenha } from '../api/endpoints';
+import { useState } from 'react'
+import { Alert, Button, Form } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
+import { mensagemDeErro, redefinirSenha } from '../api/client'
 
-export default function EsqueciSenha() {
-  const [email, setEmail] = useState('');
-  const [enviado, setEnviado] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState('');
+export function EsqueciSenha() {
+  const [email, setEmail] = useState('')
+  const [enviado, setEnviado] = useState(false)
+  const [erro, setErro] = useState(null)
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    setErro('');
-    setLoading(true);
+    e.preventDefault()
+    setErro(null)
     try {
-      const res = await redefinirSenha({ email, organizacao: 'personal-trainer' });
-      if (res.status === 429) {
-        setErro('Muitas tentativas, aguarde um minuto.');
-        return;
-      }
-      setEnviado(true);
-    } finally {
-      setLoading(false);
+      await redefinirSenha(email)
+      setEnviado(true)
+    } catch (erro) {
+      setErro(mensagemDeErro(erro))
     }
   }
 
-  if (enviado) {
-    return (
-      <div>
-        <p>Se o e-mail estiver cadastrado, você receberá um link para criar uma nova senha.</p>
-        <Link to="/login">Voltar ao login</Link>
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <h1>Esqueci minha senha</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>E-mail</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        {erro && <p>{erro}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? 'Enviando...' : 'Enviar link'}
-        </button>
-      </form>
-      <Link to="/login">Voltar ao login</Link>
-    </div>
-  );
+    <>
+      <h2 className="mb-4">Esqueci minha senha</h2>
+      {enviado ? (
+        <Alert variant="success">
+          Se o e-mail estiver cadastrado, você receberá um link para criar uma nova senha.
+        </Alert>
+      ) : (
+        <Form onSubmit={handleSubmit}>
+          {erro && <Alert variant="danger">{erro}</Alert>}
+          <Form.Group className="mb-3" controlId="email">
+            <Form.Label>E-mail</Form.Label>
+            <Form.Control type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+          </Form.Group>
+          <Button type="submit" className="w-100">Enviar link</Button>
+        </Form>
+      )}
+      <Link to="/login" className="d-block mt-3">Voltar para o login</Link>
+    </>
+  )
 }
+
+export default EsqueciSenha

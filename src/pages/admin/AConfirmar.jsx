@@ -1,66 +1,75 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getAgendamentos, confirmarAgendamento, cancelarAgendamento } from '../../api/endpoints';
-import { formatarData, formatarHora, LABEL_STATUS } from '../../utils/helpers';
-import Loading from '../../components/Loading';
-import ErrorMsg from '../../components/ErrorMsg';
+import { useState } from 'react'
+import { Alert, Button, ListGroup } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
+import { api, mensagemDeErro } from '../../api/client'
+import { Carregando } from '../../components/Carregando'
+import { CarregarMais } from '../../components/CarregarMais'
+import { ConfirmarAcao } from '../../components/ConfirmarAcao'
+import { Erro } from '../../components/Erro'
+import { formatarData, formatarHora } from '../../formatos'
+import { usePaginado } from '../../hooks/useApi'
 
-export default function AConfirmar() {
-  const navigate = useNavigate();
-  const [treinos, setTreinos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState('');
+export function AConfirmar() {
+  const pedidos = usePaginado('/agendamentos/?status=solicitado')
+  const [pendente, setPendente] = useState(null)
+  const [erroAcao, setErroAcao] = useState(null)
 
-  async function carregar() {
-    setLoading(true);
-    setErro('');
+  async function executar(id, acao) {
+    setErroAcao(null)
     try {
-      const res = await getAgendamentos('?status=solicitado');
-      if (!res.ok) { setErro('Erro ao carregar pedidos.'); return; }
-      const data = await res.json();
-      setTreinos(data.results || data);
-    } finally {
-      setLoading(false);
+      await api(`/agendamentos/${id}/${acao}/`, { method: 'POST' })
+      pedidos.recarregar()
+    } catch (erro) {
+      setErroAcao(mensagemDeErro(erro))
     }
   }
 
-  useEffect(() => { carregar(); }, []);
-
-  async function handleConfirmar(id) {
-    await confirmarAgendamento(id);
-    carregar();
+  function confirmarAcao() {
+    executar(pendente.id, pendente.acao)
+    setPendente(null)
   }
 
-  async function handleCancelar(id) {
-    if (!confirm('Cancelar este agendamento?')) return;
-    await cancelarAgendamento(id);
-    carregar();
-  }
-
-  if (loading) return <Loading />;
-  if (erro) return <ErrorMsg message={erro} onRetry={carregar} />;
+  if (pedidos.erro) return <Erro erro={pedidos.erro} tentarDeNovo={pedidos.recarregar} />
 
   return (
-    <div>
-      <h1>A confirmar</h1>
-      {treinos.length === 0 ? (
-        <p>Nenhum pedido para confirmar.</p>
-      ) : (
-        treinos.map((t) => (
-          <div key={t.id} style={{ border: '1px solid #ccc', margin: 8, padding: 8 }}>
-            <p
-              onClick={() => navigate(`/admin/treinos/${t.id}`)}
-              style={{ cursor: 'pointer', fontWeight: 'bold' }}
-            >
-              {t.servico_nome} — {t.recurso_nome}
-            </p>
-            <p>{formatarData(t.inicio)} às {formatarHora(t.inicio)}</p>
-            <p>Aluno: {t.usuario_nome}</p>
-            <button type="button" onClick={() => handleConfirmar(t.id)}>Confirmar</button>
-            <button type="button" onClick={() => handleCancelar(t.id)}>Cancelar</button>
-          </div>
-        ))
+    <>
+      <h2 className="mb-4">A confirmar</h2>
+      {erroAcao && <Alert variant="danger">{erroAcao}</Alert>}
+      {!pedidos.carregando && pedidos.itens.length === 0 && (
+        <Alert variant="success">Nenhum pedido para confirmar.</Alert>
       )}
-    </div>
-  );
+      <ListGroup>
+        {pedidos.itens.map(aula => (
+          <ListGroup.Item key={aula.id} className="d-flex flex-wrap align-items-center gap-3">
+            <div className="text-center">
+              <div className="fw-bold">{formatarHora(aula.inicio)}</div>
+              <small className="text-secondary">{formatarData(aula.inicio)}</small>
+            </div>
+            <div className="me-auto">
+              <Link to={`/treinos/${aula.id}`} className="fw-semibold">{aula.servico_nome}</Link>
+              <div><small className="text-secondary">{aula.recurso_nome} · {aula.cliente_nome}</small></div>
+              {aula.observacoes && <small className="fst-italic">{aula.observacoes}</small>}
+            </div>
+            <div className="d-flex gap-2">
+              <Button variant="success" size="sm" onClick={() => setPendente({ id: aula.id, acao: 'confirmar' })}>
+                <i className="bi bi-check-lg"></i> Confirmar
+              </Button>
+              <Button variant="outline-danger" size="sm" onClick={() => setPendente({ id: aula.id, acao: 'cancelar' })}>
+                Cancelar
+              </Button>
+            </div>
+          </ListGroup.Item>
+        ))}
+      </ListGroup>
+      {pedidos.carregando ? <Carregando /> : <CarregarMais lista={pedidos} />}
+
+      <ConfirmarAcao
+        acao={pendente?.acao ?? null}
+        onConfirmar={confirmarAcao}
+        onFechar={() => setPendente(null)}
+      />
+    </>
+  )
 }
+
+export default AConfirmar

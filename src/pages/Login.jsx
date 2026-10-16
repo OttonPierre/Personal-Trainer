@@ -1,70 +1,49 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { login, getEu } from '../api/endpoints';
-import { useAuth } from '../contexts/AuthContext';
-import { parseErrors } from '../utils/helpers';
+import { useState } from 'react'
+import { Alert, Button, Form } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
+import { mensagemDeErro } from '../api/client'
+import { useAuth } from '../AuthContext'
 
-export default function Login() {
-  const navigate = useNavigate();
-  const { setUser } = useAuth();
-  const [form, setForm] = useState({ email: '', senha: '' });
-  const [erros, setErros] = useState({});
-  const [loading, setLoading] = useState(false);
-
-  function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  }
+export function Login() {
+  const { entrar } = useAuth()
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
+  const [erro, setErro] = useState(null)
+  const [enviando, setEnviando] = useState(false)
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    setErros({});
-    setLoading(true);
+    e.preventDefault()
+    setEnviando(true)
+    setErro(null)
     try {
-      const res = await login({ ...form, organizacao: 'personal-trainer' });
-      const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 429) {
-          setErros({ _geral: 'Muitas tentativas, aguarde um minuto.' });
-        } else {
-          setErros({ _geral: data.detail || 'Organização, e-mail ou senha inválidos.' });
-        }
-        return;
-      }
-      localStorage.setItem('access', data.access);
-      localStorage.setItem('refresh', data.refresh);
-      const resEu = await getEu();
-      if (resEu && resEu.ok) {
-        const eu = await resEu.json();
-        setUser(eu);
-        const isAdmin = (eu.permissoes || []).includes('api.change_organizacao');
-        navigate(isAdmin ? '/admin/agenda' : '/inicio');
-      }
-    } finally {
-      setLoading(false);
+      await entrar(email, senha)
+    } catch (erro) {
+      setErro(mensagemDeErro(erro))
+      setEnviando(false)
     }
   }
 
   return (
-    <div>
-      <h1>Entrar</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>E-mail</label>
-          <input type="email" name="email" value={form.email} onChange={handleChange} required />
-          {erros.email && <span>{erros.email}</span>}
-        </div>
-        <div>
-          <label>Senha</label>
-          <input type="password" name="senha" value={form.senha} onChange={handleChange} required />
-          {erros.senha && <span>{erros.senha}</span>}
-        </div>
-        {erros._geral && <p>{erros._geral}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? 'Entrando...' : 'Entrar'}
-        </button>
-      </form>
-      <Link to="/cadastro">Criar conta</Link>
-      <Link to="/esqueci-senha">Esqueci minha senha</Link>
-    </div>
-  );
+    <>
+      <h2 className="mb-4">Entrar</h2>
+      {erro && <Alert variant="danger">{erro}</Alert>}
+      <Form onSubmit={handleSubmit}>
+        <Form.Group className="mb-3" controlId="email">
+          <Form.Label>E-mail</Form.Label>
+          <Form.Control type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+        </Form.Group>
+        <Form.Group className="mb-3" controlId="senha">
+          <Form.Label>Senha</Form.Label>
+          <Form.Control type="password" value={senha} onChange={e => setSenha(e.target.value)} required />
+        </Form.Group>
+        <Button type="submit" className="w-100" disabled={enviando}>Entrar</Button>
+      </Form>
+      <div className="d-flex justify-content-between mt-3">
+        <Link to="/cadastro">Criar conta</Link>
+        <Link to="/esqueci-senha">Esqueci minha senha</Link>
+      </div>
+    </>
+  )
 }
+
+export default Login

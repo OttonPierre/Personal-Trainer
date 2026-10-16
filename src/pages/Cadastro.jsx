@@ -1,82 +1,60 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { cadastro, login, getEu } from '../api/endpoints';
-import { useAuth } from '../contexts/AuthContext';
-import { parseErrors } from '../utils/helpers';
+import { useState } from 'react'
+import { Alert, Button, Form } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
+import { cadastrar, mensagemDeErro } from '../api/client'
+import { useAuth } from '../AuthContext'
 
-export default function Cadastro() {
-  const navigate = useNavigate();
-  const { setUser } = useAuth();
-  const [form, setForm] = useState({ nome: '', email: '', senha: '' });
-  const [erros, setErros] = useState({});
-  const [loading, setLoading] = useState(false);
-
-  function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  }
+export function Cadastro() {
+  const { entrar } = useAuth()
+  const [nome, setNome] = useState('')
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
+  const [erro, setErro] = useState(null)
+  const [erros, setErros] = useState({})
+  const [enviando, setEnviando] = useState(false)
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    setErros({});
-    setLoading(true);
+    e.preventDefault()
+    setEnviando(true)
+    setErro(null)
+    setErros({})
     try {
-      const resCadastro = await cadastro({
-        ...form,
-        organizacao: 'personal-trainer',
-      });
-      const dataCadastro = await resCadastro.json();
-      if (!resCadastro.ok) {
-        setErros(parseErrors(dataCadastro));
-        return;
-      }
-      const resLogin = await login({
-        email: form.email,
-        senha: form.senha,
-        organizacao: 'personal-trainer',
-      });
-      const dataLogin = await resLogin.json();
-      if (!resLogin.ok) {
-        navigate('/login');
-        return;
-      }
-      localStorage.setItem('access', dataLogin.access);
-      localStorage.setItem('refresh', dataLogin.refresh);
-      const resEu = await getEu();
-      if (resEu && resEu.ok) {
-        const eu = await resEu.json();
-        setUser(eu);
-      }
-      navigate('/inicio');
-    } finally {
-      setLoading(false);
+      await cadastrar(nome, email, senha)
+      await entrar(email, senha)
+    } catch (erro) {
+      setErro(mensagemDeErro(erro))
+      setErros(erro.dados ?? {})
+      setEnviando(false)
     }
   }
 
   return (
-    <div>
-      <h1>Criar conta</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Nome</label>
-          <input name="nome" value={form.nome} onChange={handleChange} required />
-          {erros.nome && <span>{erros.nome}</span>}
-        </div>
-        <div>
-          <label>E-mail</label>
-          <input type="email" name="email" value={form.email} onChange={handleChange} required />
-          {erros.email && <span>{erros.email}</span>}
-        </div>
-        <div>
-          <label>Senha</label>
-          <input type="password" name="senha" value={form.senha} onChange={handleChange} required />
-          {erros.senha && <span>{erros.senha}</span>}
-        </div>
-        {erros._geral && <p>{erros._geral}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? 'Criando...' : 'Criar conta'}
-        </button>
-      </form>
-      <p>Já tem conta? <Link to="/login">Entrar</Link></p>
-    </div>
-  );
+    <>
+      <h2 className="mb-4">Criar conta</h2>
+      {erro && <Alert variant="danger">{erro}</Alert>}
+      <Form onSubmit={handleSubmit}>
+        <Form.Group className="mb-3" controlId="nome">
+          <Form.Label>Nome</Form.Label>
+          <Form.Control value={nome} onChange={e => setNome(e.target.value)} isInvalid={!!erros.nome} required />
+          <Form.Control.Feedback type="invalid">{erros.nome?.join(' ')}</Form.Control.Feedback>
+        </Form.Group>
+        <Form.Group className="mb-3" controlId="email">
+          <Form.Label>E-mail</Form.Label>
+          <Form.Control type="email" value={email} onChange={e => setEmail(e.target.value)} isInvalid={!!erros.email} required />
+          <Form.Control.Feedback type="invalid">{erros.email?.join(' ')}</Form.Control.Feedback>
+        </Form.Group>
+        <Form.Group className="mb-3" controlId="senha">
+          <Form.Label>Senha</Form.Label>
+          <Form.Control type="password" value={senha} onChange={e => setSenha(e.target.value)} isInvalid={!!erros.senha} required />
+          <Form.Control.Feedback type="invalid">{erros.senha?.join(' ')}</Form.Control.Feedback>
+        </Form.Group>
+        <Button type="submit" className="w-100" disabled={enviando}>Criar conta</Button>
+      </Form>
+      <p className="mt-3 mb-0">
+        Já tem conta? <Link to="/login">Entrar</Link>
+      </p>
+    </>
+  )
 }
+
+export default Cadastro

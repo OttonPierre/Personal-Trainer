@@ -1,66 +1,74 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { alterarSenha } from '../api/endpoints';
-import { parseErrors } from '../utils/helpers';
+import { useState } from 'react'
+import { Alert, Button, Card, Col, Form, Row } from 'react-bootstrap'
+import { useNavigate } from 'react-router-dom'
+import { api, mensagemDeErro } from '../api/client'
 
-export default function AlterarSenha() {
-  const navigate = useNavigate();
-  const [form, setForm] = useState({ senha_atual: '', nova_senha: '', confirmar: '' });
-  const [erros, setErros] = useState({});
-  const [loading, setLoading] = useState(false);
-
-  function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  }
+export function AlterarSenha() {
+  const navigate = useNavigate()
+  const [senhaAtual, setSenhaAtual] = useState('')
+  const [novaSenha, setNovaSenha] = useState('')
+  const [confirmacao, setConfirmacao] = useState('')
+  const [erro, setErro] = useState(null)
+  const [erros, setErros] = useState({})
+  const [enviando, setEnviando] = useState(false)
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    setErros({});
-    if (form.nova_senha !== form.confirmar) {
-      setErros({ confirmar: 'As senhas não coincidem.' });
-      return;
+    e.preventDefault()
+    setErro(null)
+    setErros({})
+
+    if (novaSenha !== confirmacao) {
+      setErros({ confirmacao: ['A confirmação não confere com a nova senha.'] })
+      return
     }
-    setLoading(true);
+
+    setEnviando(true)
     try {
-      const res = await alterarSenha({ senha_atual: form.senha_atual, nova_senha: form.nova_senha });
-      const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 429) {
-          setErros({ _geral: 'Muitas tentativas, aguarde um minuto.' });
-        } else {
-          setErros(parseErrors(data));
-        }
-        return;
-      }
-      navigate('/perfil', { state: { mensagem: 'Senha alterada' } });
-    } finally {
-      setLoading(false);
+      await api('/auth/alterar-senha/', {
+        method: 'POST',
+        body: { senha_atual: senhaAtual, nova_senha: novaSenha },
+      })
+      navigate('/perfil', { state: { mensagem: 'Senha alterada com sucesso.' } })
+    } catch (erro) {
+      setErro(mensagemDeErro(erro))
+      setErros(erro.dados ?? {})
+      setEnviando(false)
     }
   }
 
   return (
-    <div>
-      <h1>Alterar senha</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Senha atual</label>
-          <input type="password" name="senha_atual" value={form.senha_atual} onChange={handleChange} required />
-          {erros.senha_atual && <span>{erros.senha_atual}</span>}
-        </div>
-        <div>
-          <label>Nova senha</label>
-          <input type="password" name="nova_senha" value={form.nova_senha} onChange={handleChange} required />
-          {erros.nova_senha && <span>{erros.nova_senha}</span>}
-        </div>
-        <div>
-          <label>Confirmar nova senha</label>
-          <input type="password" name="confirmar" value={form.confirmar} onChange={handleChange} required />
-          {erros.confirmar && <span>{erros.confirmar}</span>}
-        </div>
-        {erros._geral && <p>{erros._geral}</p>}
-        <button type="submit" disabled={loading}>{loading ? 'Salvando...' : 'Salvar'}</button>
-        <button type="button" onClick={() => navigate('/perfil')}>Cancelar</button>
-      </form>
-    </div>
-  );
+    <Row className="justify-content-center">
+      <Col md={8} lg={6}>
+        <Card>
+          <Card.Body>
+            <h2 className="mb-4">Alterar senha</h2>
+            {erro && <Alert variant="danger">{erro}</Alert>}
+            <Form onSubmit={handleSubmit}>
+              <Form.Group className="mb-3" controlId="senhaAtual">
+                <Form.Label>Senha atual</Form.Label>
+                <Form.Control type="password" value={senhaAtual} onChange={e => setSenhaAtual(e.target.value)} isInvalid={!!erros.senha_atual} required />
+                <Form.Control.Feedback type="invalid">{erros.senha_atual?.join(' ')}</Form.Control.Feedback>
+              </Form.Group>
+              <Form.Group className="mb-3" controlId="novaSenha">
+                <Form.Label>Nova senha</Form.Label>
+                <Form.Control type="password" value={novaSenha} onChange={e => setNovaSenha(e.target.value)} isInvalid={!!erros.nova_senha} required />
+                <Form.Control.Feedback type="invalid">{erros.nova_senha?.join(' ')}</Form.Control.Feedback>
+              </Form.Group>
+              <Form.Group className="mb-3" controlId="confirmacao">
+                <Form.Label>Confirme a nova senha</Form.Label>
+                <Form.Control type="password" value={confirmacao} onChange={e => setConfirmacao(e.target.value)} isInvalid={!!erros.confirmacao} required />
+                <Form.Control.Feedback type="invalid">{erros.confirmacao?.join(' ')}</Form.Control.Feedback>
+              </Form.Group>
+              <div className="d-flex gap-2">
+                <Button variant="outline-secondary" onClick={() => navigate('/perfil')}>Cancelar</Button>
+                <Button type="submit" disabled={enviando}>Salvar</Button>
+              </div>
+            </Form>
+          </Card.Body>
+        </Card>
+      </Col>
+    </Row>
+  )
 }
+
+export default AlterarSenha

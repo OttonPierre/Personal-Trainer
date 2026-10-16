@@ -1,61 +1,99 @@
-const BASE_URL = 'https://agendamentos.spaincentral.cloudapp.azure.com/api';
+const API = import.meta.env.VITE_API_URL || 'https://agendamentos.spaincentral.cloudapp.azure.com/api'
+export const ORGANIZACAO = import.meta.env.VITE_ORGANIZACAO || 'personal-trainer'
 
-async function request(path, options = {}) {
-  const token = localStorage.getItem('access');
-  const headers = { ...options.headers };
+function enviar(caminho, { method = 'GET', body } = {}) {
+  const url = caminho.startsWith('http') ? caminho : API + caminho
+  const headers = {}
 
-  if (!(options.body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
+  const access = localStorage.getItem('access')
+  if (access) {
+    headers.Authorization = `Bearer ${access}`
   }
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  // FormData (envio de imagens) vai direto: o navegador monta o Content-Type
+  if (body && !(body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json'
+    body = JSON.stringify(body)
   }
 
-  const response = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  return fetch(url, { method, headers, body })
+}
 
-  if (response.status === 401) {
-    const refreshed = await tryRefresh();
-    if (refreshed) {
-      headers['Authorization'] = `Bearer ${localStorage.getItem('access')}`;
-      return fetch(`${BASE_URL}${path}`, { ...options, headers });
+async function renovarToken() {
+  const resposta = await fetch(`${API}/auth/renovar/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh: localStorage.getItem('refresh') }),
+  })
+  if (!resposta.ok) {
+    return false
+  }
+  const { access } = await resposta.json()
+  localStorage.setItem('access', access)
+  return true
+}
+
+export async function api(caminho, opcoes) {
+  let resposta = await enviar(caminho, opcoes)
+
+  if (resposta.status === 401 && localStorage.getItem('refresh')) {
+    if (await renovarToken()) {
+      resposta = await enviar(caminho, opcoes)
     } else {
-      localStorage.clear();
-      window.location.href = '/';
-      return;
+      localStorage.removeItem('access')
+      localStorage.removeItem('refresh')
+      window.location.href = '/login'
     }
   }
 
-  return response;
-}
-
-async function tryRefresh() {
-  const refresh = localStorage.getItem('refresh');
-  if (!refresh) return false;
-  const res = await fetch(`${BASE_URL}/auth/renovar/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh }),
-  });
-  if (res.ok) {
-    const data = await res.json();
-    localStorage.setItem('access', data.access);
-    return true;
+  const dados = resposta.status === 204 ? null : await resposta.json()
+  if (!resposta.ok) {
+    throw { status: resposta.status, dados }
   }
-  return false;
+  return dados
 }
 
-export const api = {
-  get: (path) => request(path),
-  post: (path, body) =>
-    request(path, {
-      method: 'POST',
-      body: body instanceof FormData ? body : JSON.stringify(body),
-    }),
-  patch: (path, body) =>
-    request(path, {
-      method: 'PATCH',
-      body: body instanceof FormData ? body : JSON.stringify(body),
-    }),
-  delete: (path) => request(path, { method: 'DELETE' }),
-};
+// junta os resultados de todas as páginas de uma lista
+export async function buscarTodas(caminho) {
+  let itens = []
+  let proxima = caminho
+  while (proxima) {
+    const dados = await api(proxima)
+    itens = [...itens, ...dados.results]
+    proxima = dados.next
+  }
+  return itens
+}
+
+export function mensagemDeErro(erro) {
+  const dados = erro.dados
+  if (!erro.status) return 'Não foi possível falar com o servidor.'
+  if (erro.status === 403) return 'Você não tem permissão para esta ação.'
+  if (erro.status === 404) return 'Não encontrado.'
+  if (erro.status === 429) return 'Muitas tentativas, aguarde um minuto.'
+  if (Array.isArray(dados)) return dados.join(' ')
+  if (dados?.detail) return dados.detail
+  if (dados?.non_field_errors) return dados.non_field_errors.join(' ')
+  return 'Verifique os campos destacados.'
+}
+
+export function login(email, senha) {
+  return api('/auth/login/', {
+    method: 'POST',
+    body: { organizacao: ORGANIZACAO, email, senha },
+  })
+}
+
+export function cadastrar(nome, email, senha) {
+  return api('/auth/cadastro/', {
+    method: 'POST',
+    body: { organizacao: ORGANIZACAO, nome, email, senha },
+  })
+}
+
+export function redefinirSenha(email) {
+  return api('/auth/redefinir-senha/', {
+    method: 'POST',
+    body: { organizacao: ORGANIZACAO, email },
+  })
+}
