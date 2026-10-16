@@ -31,7 +31,7 @@ Esse sistema web é voltado para personal trainers, sendo uma plataforma desenvo
 
 ## Vercel 
 
-link: https://vercel.com/pierre-915d/personal-trainer
+link: https://personal-trainer-three-silk.vercel.app/
 
 
 
