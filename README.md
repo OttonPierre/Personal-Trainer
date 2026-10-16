@@ -29,5 +29,9 @@ Esse sistema web é voltado para personal trainers, sendo uma plataforma desenvo
 - [Gustavo Lunnyê Sales Silva](https://github.com/Gusta567u)
 - [João Emanuel de Souza Gomes](https://github.com/jedsg777)
 
+## Vercel 
+
+link: https://vercel.com/pierre-915d/personal-trainer
+
 
 
