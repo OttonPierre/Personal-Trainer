@@ -1,90 +1,89 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getEu, patchEu } from '../api/endpoints';
-import { useAuth } from '../contexts/AuthContext';
-import { parseErrors } from '../utils/helpers';
+import { useState } from 'react'
+import { Alert, Button, Card, Col, Form, Row } from 'react-bootstrap'
+import { Link, useLocation } from 'react-router-dom'
+import { api, mensagemDeErro } from '../api/client'
+import { useAuth } from '../AuthContext'
+import { Foto } from '../components/Foto'
 
-export default function Perfil() {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [form, setForm] = useState({ nome: '' });
-  const [foto, setFoto] = useState(null);
-  const [erros, setErros] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState('');
-  const [sucesso, setSucesso] = useState('');
+export function Perfil() {
+  const { usuario, setUsuario, sair } = useAuth()
+  const location = useLocation()
+  const [nome, setNome] = useState(usuario.nome)
+  const [foto, setFoto] = useState(null)
+  const [erro, setErro] = useState(null)
+  const [erros, setErros] = useState({})
+  const [salvo, setSalvo] = useState(false)
 
-  async function carregar() {
-    setLoading(true);
-    setErro('');
+  async function salvar(corpo) {
+    setErro(null)
+    setErros({})
+    setSalvo(false)
     try {
-      const res = await getEu();
-      if (res && res.ok) {
-        const data = await res.json();
-        setUser(data);
-        setForm({ nome: data.nome || '' });
-      } else {
-        setErro('Erro ao carregar perfil.');
-      }
-    } finally {
-      setLoading(false);
+      setUsuario(await api('/auth/eu/', { method: 'PATCH', body: corpo }))
+      setSalvo(true)
+    } catch (erro) {
+      setErro(mensagemDeErro(erro))
+      setErros(erro.dados ?? {})
     }
   }
 
-  useEffect(() => { carregar(); }, []);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setErros({});
-    setSucesso('');
-    const fd = new FormData();
-    fd.append('nome', form.nome);
-    if (foto) fd.append('foto', foto);
-    const res = await patchEu(fd);
-    const data = await res.json();
-    if (!res.ok) {
-      setErros(parseErrors(data));
-      return;
+  function handleSubmit(e) {
+    e.preventDefault()
+    const formulario = new FormData()
+    formulario.append('nome', nome)
+    if (foto) {
+      formulario.append('foto', foto)
     }
-    setUser(data);
-    setSucesso('Perfil atualizado.');
+    salvar(formulario)
   }
-
-  function handleLogout() {
-    logout();
-    navigate('/');
-  }
-
-  if (loading) return <p>Carregando...</p>;
-  if (erro) return <div><p>{erro}</p><button onClick={carregar}>Tentar de novo</button></div>;
 
   return (
-    <div>
-      <h1>Meu perfil</h1>
-      {user?.foto && <img src={user.foto} alt="Foto" width={80} />}
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Nome</label>
-          <input
-            name="nome"
-            value={form.nome}
-            onChange={(e) => setForm({ ...form, nome: e.target.value })}
-            required
-          />
-          {erros.nome && <span>{erros.nome}</span>}
-        </div>
-        <div>
-          <label>Foto</label>
-          <input type="file" accept="image/*" onChange={(e) => setFoto(e.target.files[0])} />
-          {erros.foto && <span>{erros.foto}</span>}
-        </div>
-        {erros._geral && <p>{erros._geral}</p>}
-        {sucesso && <p>{sucesso}</p>}
-        <button type="submit">Salvar</button>
-      </form>
-      <button type="button" onClick={() => navigate('/alterar-senha')}>Alterar senha</button>
-      <button type="button" onClick={handleLogout}>Sair</button>
-    </div>
-  );
+    <Row className="justify-content-center">
+      <Col md={8} lg={6}>
+        <Card>
+          <Card.Body>
+            <div className="text-center mb-4">
+              <Foto src={usuario.foto} tamanho={96} />
+              <h2 className="mt-2 mb-0">{usuario.nome}</h2>
+              <div className="text-secondary">{usuario.email}</div>
+              <div className="text-secondary">{usuario.organizacao?.nome}</div>
+            </div>
+
+            {erro && <Alert variant="danger">{erro}</Alert>}
+            {salvo && <Alert variant="success">Perfil atualizado.</Alert>}
+            {location.state?.mensagem && <Alert variant="success">{location.state.mensagem}</Alert>}
+
+            <Form onSubmit={handleSubmit}>
+              <Form.Group className="mb-3" controlId="nome">
+                <Form.Label>Nome</Form.Label>
+                <Form.Control value={nome} onChange={e => setNome(e.target.value)} isInvalid={!!erros.nome} required />
+                <Form.Control.Feedback type="invalid">{erros.nome?.join(' ')}</Form.Control.Feedback>
+              </Form.Group>
+              <Form.Group className="mb-3" controlId="foto">
+                <Form.Label>Foto</Form.Label>
+                <Form.Control type="file" accept="image/*" onChange={e => setFoto(e.target.files[0])} isInvalid={!!erros.foto} />
+                <Form.Control.Feedback type="invalid">{erros.foto?.join(' ')}</Form.Control.Feedback>
+              </Form.Group>
+              <div className="d-flex gap-2">
+                <Button type="submit">Salvar</Button>
+                {usuario.foto && (
+                  <Button variant="outline-secondary" onClick={() => salvar({ foto: null })}>
+                    Remover foto
+                  </Button>
+                )}
+                <Button as={Link} to="/perfil/senha" variant="outline-primary" className="ms-auto">
+                  <i className="bi bi-key"></i> Alterar senha
+                </Button>
+                <Button variant="outline-danger" onClick={sair}>
+                  <i className="bi bi-box-arrow-right"></i> Sair
+                </Button>
+              </div>
+            </Form>
+          </Card.Body>
+        </Card>
+      </Col>
+    </Row>
+  )
 }
+
+export default Perfil

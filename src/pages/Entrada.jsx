@@ -1,21 +1,20 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Button, Image } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
 
-export default function Entrada() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (localStorage.getItem('access')) {
-      navigate('/inicio', { replace: true });
-    }
-  }, [navigate]);
-
+export function Entrada() {
   return (
-    <div>
-      <h1>Personal Trainer</h1>
-      <p>Bem-vindo ao app do Personal Trainer</p>
-      <button type="button" onClick={() => navigate('/login')}>Entrar</button>
-      <button type="button" onClick={() => navigate('/cadastro')}>Criar conta</button>
+    <div className="text-center">
+      <Image src="/favicon.svg" alt="Personal Trainer" width={80} height={80} fluid className="mb-4" />
+      <h2 className="mb-3">Personal Trainer</h2>
+      <p className="text-secondary">
+        Agendamento de treinos individuais e avaliações físicas com personal trainers.
+      </p>
+      <div className="d-grid gap-2 mt-4">
+        <Button as={Link} to="/login">Entrar</Button>
+        <Button as={Link} to="/cadastro" variant="outline-primary">Criar conta</Button>
+      </div>
     </div>
-  );
+  )
 }
+
+export default Entrada
